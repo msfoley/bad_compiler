@@ -32,6 +32,8 @@ enum token_id {
     TOKEN_BIT_AND,
     TOKEN_BIT_OR,
     TOKEN_BIT_XOR,
+    TOKEN_BIT_NEGATE,
+    TOKEN_BANG,
     TOKEN_COMMA,
     TOKEN_SEMICOLON,
     TOKEN_COLON,

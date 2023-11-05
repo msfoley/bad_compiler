@@ -44,7 +44,7 @@
  *
  */
 
-const char special_chars[TOKEN_COUNT] = "\t \n\r(){}[]<>=!|&+-*/^,;:\\\"'";
+const char special_chars[TOKEN_COUNT] = "\t \n\r(){}[]<>=!|&+-*/^,;:\\\"'~";
 const char *token_strings[TOKEN_COUNT] = {
     [TOKEN_START_LINE_COMMENT] = "//",
     [TOKEN_START_BLOCK_COMMENT] = "/*",
@@ -76,6 +76,8 @@ const char *token_strings[TOKEN_COUNT] = {
     [TOKEN_BIT_AND] = "&",
     [TOKEN_BIT_OR] = "|",
     [TOKEN_BIT_XOR] = "^",
+    [TOKEN_BIT_NEGATE] = "~",
+    [TOKEN_BANG] = "!",
     [TOKEN_COMMA] = ",",
     [TOKEN_SEMICOLON] = ";",
     [TOKEN_COLON] = ":",
@@ -119,6 +121,8 @@ const char *token_names[TOKEN_COUNT] = {
     [TOKEN_BIT_AND] = "TOKEN_BIT_AND",
     [TOKEN_BIT_OR] = "TOKEN_BIT_OR",
     [TOKEN_BIT_XOR] = "TOKEN_BIT_XOR",
+    [TOKEN_BIT_NEGATE] = "TOKEN_BIT_NEGATE",
+    [TOKEN_BANG] = "TOKEN_BANG",
     [TOKEN_COMMA] = "TOKEN_COMMA",
     [TOKEN_SEMICOLON] = "TOKEN_SEMICOLON",
     [TOKEN_COLON] = "TOKEN_COLON",
