@@ -2,7 +2,6 @@
 #define ARGS_H
 
 struct arguments {
-    const char *config;
     const char *source;
     const char *output;
     const char *log;

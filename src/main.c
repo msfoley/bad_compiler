@@ -46,14 +46,13 @@ int main(int argc, char **argv) {
     log_init(args->log, args->verbose, args->quiet);
 
     print_debug("Arguments:\n");
-    print_debug("\tconfig = %s\n", args->config);
     print_debug("\tsource = %s\n", args->source);
     print_debug("\toutput = %s\n", args->output);
     print_debug("\tlog = %s\n", args->log);
     print_debug("\tverbose = %d\n", args->verbose);
     print_debug("\tquiet = %d\n", args->quiet);
 
-    ssize_t fret = read_file(args->config, &config_buf);
+    ssize_t fret = read_file(args->source, &config_buf);
     if (fret >= 0) {
         ret = parse_tokens(config_buf, &token_list);
         if (ret) {

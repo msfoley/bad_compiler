@@ -1,4 +1,4 @@
-PROGRAM_NAME := binary_tool
+PROGRAM_NAME := bad_cc
 PROGRAM_VERSION := 0.0.0
 PROGRAM_EMAIL := mfoley@mfoley.xyz
 

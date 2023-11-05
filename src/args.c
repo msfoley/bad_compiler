@@ -22,8 +22,8 @@ static struct argp_option options[] = {
 const char *argp_program_bug_address = PROGRAM_EMAIL;
 const char *argp_program_version = PROGRAM_NAME " v" PROGRAM_VERSION;
 
-const char doc[] = PROGRAM_NAME " -- Replace bytes in a file with other bytes";
-const char args_doc[] = "CONFIG SOURCE";
+const char doc[] = PROGRAM_NAME " -- Bad C compiler";
+const char args_doc[] = "SOURCE_FILE";
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     struct arguments *arguments = (struct arguments *) state->input;
@@ -40,17 +40,15 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             arguments->output = arg;
             break;
         case ARGP_KEY_ARG:
-            if (state->arg_num >= 2) {
+            if (state->arg_num >= 1) {
                 argp_usage(state);
             } else if (state->arg_num == 0) {
-                arguments->config = arg;
-            } else if (state->arg_num == 1) {
                 arguments->source = arg;
             }
 
             break;
         case ARGP_KEY_END:
-            if (state->arg_num < 2) {
+            if (state->arg_num < 1) {
                 argp_usage(state);
             }
 
@@ -100,23 +98,17 @@ int parse_arguments(struct arguments **arguments, int argc, char **argv) {
         }
     }
 
-    ret = test_read(args->config);
-    if (ret) {
-        goto cleanup;
-    }
-
     ret = test_read(args->source);
     if (ret) {
         goto cleanup;
     }
 
+    if (!args->output) {
+        args->output = "a.out";
+    }
+
     if (args->output) {
         ret = test_write(args->output);
-        if (ret) {
-            goto cleanup;
-        }
-    } else {
-        ret = test_write(args->source);
         if (ret) {
             goto cleanup;
         }
