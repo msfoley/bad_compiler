@@ -1,52 +1,58 @@
-# http://www.gnu.org/software/automake
+# Prerequisites
+*.d
 
-Makefile.in
-/ar-lib
-/mdate-sh
-/py-compile
-/test-driver
-/ylwrap
-.deps/
-.dirstamp
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
 
-# http://www.gnu.org/software/autoconf
+# Linker output
+*.ilk
+*.map
+*.exp
 
-autom4te.cache
-/autoscan.log
-/autoscan-*.log
-/aclocal.m4
-/compile
-/config.cache
-/config.guess
-/config.h.in
-/config.log
-/config.status
-/config.sub
-/configure
-/configure.scan
-/depcomp
-/install-sh
-/missing
-/stamp-h1
+# Precompiled Headers
+*.gch
+*.pch
 
-# https://www.gnu.org/software/libtool/
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
 
-/ltmain.sh
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
 
-# http://www.gnu.org/software/texinfo
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
 
-/texinfo.tex
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
 
-# http://www.gnu.org/software/m4/
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
 
-m4/libtool.m4
-m4/ltoptions.m4
-m4/ltsugar.m4
-m4/ltversion.m4
-m4/lt~obsolete.m4
+# Default program name
+binary_tool
 
-# Generated Makefile
-# (meta build system like autotools,
-# can automatically generate from config.status script
-# (which is called by configure script))
-Makefile
+# Build directory
+build/

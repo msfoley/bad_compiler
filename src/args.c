@@ -5,6 +5,7 @@
 
 #include <argp.h>
 
+#include <config.h>
 #include <args.h>
 #include <util.h>
 #include <log.h>
@@ -18,10 +19,10 @@ static struct argp_option options[] = {
     { 0 }
 };
 
-const char *argp_program_bus_address = PACKAGE_BUGREPORT;
-const char *argp_program_version = PACKAGE_STRING;
+const char *argp_program_bug_address = PROGRAM_EMAIL;
+const char *argp_program_version = PROGRAM_NAME " v" PROGRAM_VERSION;
 
-const char doc[] = PACKAGE_NAME " -- Replace bytes in a file with other bytes";
+const char doc[] = PROGRAM_NAME " -- Replace bytes in a file with other bytes";
 const char args_doc[] = "CONFIG SOURCE";
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
