@@ -1,7 +1,7 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-enum token {
+enum token_id {
     TOKEN_START_LINE_COMMENT,
     TOKEN_START_BLOCK_COMMENT,
     TOKEN_END_BLOCK_COMMENT,
@@ -46,13 +46,22 @@ enum token {
     // These tokens signify the start and end of the list
     TOKEN_LIST_START,
     TOKEN_LIST_END,
+    TOKEN_COUNT
 };
 
 struct token {
-    enum token id;
+    enum token_id id;
     char *ident_data;
 
     struct token *next;
 };
+
+extern const char special_chars[TOKEN_COUNT];
+extern const char *token_strings[TOKEN_COUNT];
+extern const char *token_names[TOKEN_COUNT];
+
+void print_token_list(struct token *head);
+void free_token_list(struct token *head);
+int parse_tokens(const char *string, struct token **tokens);
 
 #endif

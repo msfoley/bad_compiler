@@ -1,8 +1,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <errno.h>
 
 #include <util.h>
+#include <log.h>
+#include <lexer.h>
 
 /*
  * statement = for_loop | if_statement | (expression term)
@@ -41,8 +44,8 @@
  *
  */
 
-const char special_chars[] = "\t \n\r(){}[]<>=!|&+-*/^,;:\\\"'";
-const char *token_strings[] = {
+const char special_chars[TOKEN_COUNT] = "\t \n\r(){}[]<>=!|&+-*/^,;:\\\"'";
+const char *token_strings[TOKEN_COUNT] = {
     [TOKEN_START_LINE_COMMENT] = "//",
     [TOKEN_START_BLOCK_COMMENT] = "/*",
     [TOKEN_END_BLOCK_COMMENT] = "*/",
@@ -85,7 +88,7 @@ const char *token_strings[] = {
     [TOKEN_ELSE] = "else",
 };
 
-const char *token_names[] = {
+const char *token_names[TOKEN_COUNT] = {
     [TOKEN_START_LINE_COMMENT] = "TOKEN_START_LINE_COMMENT",
     [TOKEN_START_BLOCK_COMMENT] = "TOKEN_START_BLOCK_COMMENT",
     [TOKEN_END_BLOCK_COMMENT] = "TOKEN_END_BLOCK_COMMENT",
@@ -133,7 +136,7 @@ const char *token_names[] = {
 
 void print_token_list(struct token *head) {
     print_info("Token list: \n");
-    while (head != null) {
+    while (head != NULL) {
         if (head->id != TOKEN_IDENT) {
             print_info("\t%s\n", token_names[head->id]);
         } else {
@@ -160,26 +163,48 @@ void free_token_list(struct token *head) {
     }
 }
 
+int add_token_to_list(struct token **head, struct token **tail, enum token_id id, char *ident_data) {
+    struct token *token;
+
+    if (!head || !tail) {
+        return EINVAL;
+    }
+
+    token = malloc(sizeof(*token));
+    if (!token) {
+        return ENOMEM;
+    }
+
+    token->id = id;
+    token->ident_data = ident_data;
+    token->next = NULL;
+
+    if (!*head) {
+        *head = token;
+    }
+
+    if (*tail) {
+        (*tail)->next = token;
+    }
+    *tail = token;
+
+    return 0;
+}
+
 int parse_tokens(const char *string, struct token **tokens) {
     struct token *head = NULL;
     struct token *tail = NULL;
     struct token *token = NULL;
     int ret = 0;
 
-    if (!tokens || !head) {
+    if (!tokens || !string) {
         return EINVAL;
     }
 
-    head = malloc(sizeof(head));
-    if (!head) {
-        return ENOMEM;
-    }
-
-    head->token_id = TOKEN_LIST_START;
-    tail = head;
+    add_token_to_list(&head, &tail, TOKEN_LIST_START, NULL);
 
     while (*string != '\0') {
-        enum token id = TOKEN_IDENT;
+        enum token_id id = TOKEN_IDENT;
         char *ident_data = NULL;
 
         // Find special case tokens
@@ -228,33 +253,17 @@ int parse_tokens(const char *string, struct token **tokens) {
                 ret = ENOMEM;
                 goto error;
             }
+
+            strncpy(ident_data, string, len);
+            ident_data[len] = '\0';
+
+            string += len;
         }
 
-        token = malloc(sizeof(*token));
-        if (!token) {
-            ret = ENOMEM;
-            goto error;
-        }
-
-        token->id = id;
-        token->ident_data = ident_data;
-        token->next = NULL;
-
-        tail->next = token;
-        tail = token;
+        add_token_to_list(&head, &tail, id, ident_data);
     }
 
-    token = malloc(sizeof(*token));
-    if (!token) {
-        ret = ENOMEM;
-        goto error;
-    }
-
-    token->id = TOKEN_LIST_END;
-    token->next = NULL;
-
-    tail->next = token;
-    tail = token;
+    add_token_to_list(&head, &tail, TOKEN_LIST_END, NULL);
 
 error:
     print_token_list(head);

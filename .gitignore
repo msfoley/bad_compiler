@@ -56,3 +56,4 @@ binary_tool
 
 # Build directory
 build/
+include/config.h

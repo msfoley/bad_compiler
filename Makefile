@@ -16,6 +16,7 @@ OBJECT_FILES := $(patsubst $(SOURCE_DIR)/%.c,$(BUILD_DIR)/%.o,$(SOURCE_FILES))
 DEP_FILES := $(patsubst %.o,%.d,$(OBJECT_FILES))
 
 CFLAGS += -I$(INCLUDE_DIR)
+CFLAGS += -g -O0
 
 LDFLAGS +=
 LDLIBS += -lc

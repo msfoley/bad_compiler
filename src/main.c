@@ -1,13 +1,42 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
+#include <errno.h>
 
 #include <args.h>
 #include <log.h>
+#include <lexer.h>
+
+ssize_t read_file(const char *fname, char **buffer) {
+    FILE *f = NULL;
+    size_t len = 0;
+    char *buf = NULL;
+
+    f = fopen(fname, "r");
+    if (f) {
+        fseek(f, 0, SEEK_END);
+        len = ftell(f);
+        fseek(f, 0, SEEK_SET);
+
+        buf = malloc(sizeof(*buf) * len);
+        if (!buf) {
+            return -ENOMEM;
+        }
+
+        fread(buf, 1, len, f);
+        fclose(f);
+    }
+
+    *buffer = buf;
+    return len;
+}
 
 int main(int argc, char **argv) {
     int ret;
     struct arguments *args;
+    char *config_buf;
+    struct token *token_list;
 
     ret = parse_arguments(&args, argc, argv);
     if (ret) {
@@ -16,12 +45,25 @@ int main(int argc, char **argv) {
 
     log_init(args->log, args->verbose, args->quiet);
 
-    print_info("config = %s\n", args->config);
-    print_info("source = %s\n", args->source);
-    print_info("output = %s\n", args->output);
-    print_info("log = %s\n", args->log);
-    print_info("verbose = %d\n", args->verbose);
-    print_info("quiet = %d\n", args->quiet);
+    print_debug("Arguments:\n");
+    print_debug("\tconfig = %s\n", args->config);
+    print_debug("\tsource = %s\n", args->source);
+    print_debug("\toutput = %s\n", args->output);
+    print_debug("\tlog = %s\n", args->log);
+    print_debug("\tverbose = %d\n", args->verbose);
+    print_debug("\tquiet = %d\n", args->quiet);
+
+    ssize_t fret = read_file(args->config, &config_buf);
+    if (fret >= 0) {
+        ret = parse_tokens(config_buf, &token_list);
+        if (ret) {
+            print_error("Tokenizing failed with %s (%d)\n", strerror(ret), ret);
+        }
+
+        free_token_list(token_list);
+    } else {
+        print_error("Opening file failed with %s (%d)\n", strerror((int) -fret), (int) -fret);
+    }
 
     log_exit();
 
