@@ -242,7 +242,7 @@ int parse_tokens(const char *string, struct token **tokens) {
         char *ident_data = NULL;
 
         // Find special case tokens
-        for (int i = 0; i < TOKEN_IDENT; i++) {
+        for (int i = 0; i < TOKEN_FOR; i++) {
             const char *ts = token_strings[i];
             const char *s = string;
 
@@ -264,24 +264,37 @@ int parse_tokens(const char *string, struct token **tokens) {
             }
         }
 
+        // This is a token made of special characters
+        if (id < TOKEN_FOR) {
+            add_token_to_list(&head, &tail, id, NULL);
+            continue;
+        }
+
+        // Otherwise this is TOKEN_IDENT or a special token made of alphanumerics
+        size_t len = 0;
+        const char *s = string;
+
+        while (strchr(special_chars, *(s++)) == NULL) {
+            // Collect characters until we hit a special character
+            len++;
+        }
+
+        if (len == 0) {
+            // Fuck me, what do I do here?
+            print_error("Zero-length TOKEN_IDENT\n");
+
+            ret = EFAULT;
+            goto error;
+        }
+
+        for (int i = TOKEN_FOR; i < TOKEN_IDENT; i++) {
+            if (strncmp(string, token_strings[i], len) == 0) {
+                id = i;
+            }
+        }
+
         // If this doesn't match any special case, it must be a TOKEN_IDENT
         if (id == TOKEN_IDENT) {
-            size_t len = 0;
-            const char *s = string;
-
-            // Collect characters until we hit a special character
-            while (strchr(special_chars, *(s++)) == NULL) {
-                len++;
-            }
-
-            if (len == 0) {
-                // Fuck me, what do I do here?
-                print_error("Zero-length TOKEN_IDENT\n");
-
-                ret = EFAULT;
-                goto error;
-            }
-
             ident_data = malloc(sizeof(*ident_data) * (len + 1));
             if (!ident_data) {
                 ret = ENOMEM;
@@ -290,9 +303,8 @@ int parse_tokens(const char *string, struct token **tokens) {
 
             strncpy(ident_data, string, len);
             ident_data[len] = '\0';
-
-            string += len;
         }
+        string += len;
 
         add_token_to_list(&head, &tail, id, ident_data);
     }
