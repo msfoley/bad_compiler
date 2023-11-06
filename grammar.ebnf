@@ -1,0 +1,83 @@
+statement = function_declaration | function_definition | complex_type_declaration | complex_type_definition;
+
+variable_declaration = simple_variable_declaration | struct_union_variable_declaration | array_variable_declaration;
+simple_variable_declaration = type { "*" } variable [ "[" [ integer ] "]" ] [ "=" rvalue ] term;
+
+array_variable_declaration = type { "*" } variable "[" [ integer ] "]" = "{" {  } "}" term;
+array_initializer = "{" { ( rvalue | array_initializer | struct_union_initializer ) "," } "}";
+
+complex_type = struct_type | enum_type | union_type;
+complex_type_declaration = struct_declaration | union_declaration | enum_declaration;
+complex_type_definition = struct_definition | union_definition | enum_definition;
+
+struct_union_variable_declaration = (struct_type | union_type) variable [ "=" struct_union_initializer ] term;
+struct_union_initializer = "{" { "." member "=" ( rvalue | array_initializer | struct_union_initializer ) "," } "}";
+
+struct_type = "struct" name;
+struct_declaration = struct_type term;
+struct_definition = struct_type "{" struct_body "}";
+struct_body = { type member term };
+
+union_type = "union" name;
+union_declaration = union_type term;
+union_definition = union_type "{" union_body "}";
+union_body = { type member term };
+
+enum_type = "enum" name;
+enum_declaration = enum_type term;
+enum_definition = enum_type "{" enum_body "}";
+enum_body = { member "," };
+
+function_declaration = function_signature term;
+function_definition = function_signature "{" function_body "}";
+function_signature = type function "(" [ type argument { "," type argument } ] ")";
+function_body = { function_statement };
+
+function_statement = for_loop | if_statement | while_loop | switch_statement | (expression ) | ( variable_declaration );
+
+for_loop = "for" "(" for_header ")" "{" for_body "}";
+for_header = [ expressiion ] term [ expression ] term [ expression ];
+for_body = { statement };
+
+if_statment = "if" "(" expression ")" "{" if_body "}" { else_if } [ else ];
+else_if = "else" "if" "(" expression ")" "{" if_body "}";
+else = "else" "{" if_body "}";
+if_body = { statement };
+
+while_loop = "while" "(" expression ")" "{" while_body "}";
+while_body = { statement };
+
+switch_statement = "switch" "(" rvalue ")" "{" switch_body "}";
+switch_body = { switch_case | switch_default };
+switch_case = "case" ":" { statement } [ "break" term ];
+switch_default = "default" ":" { statement } [ "break" term ];
+
+expression = [ lvalue "=" ] rvalue [ operator rvalue ] term;
+rvalue = [ prefix_unary_operator ] (rvalue_data) [ postfix_unary_operator ];
+rvalue_data = call | variable | integer | list_member | string | array | struct_union_member | ( "(" expression ")" ); 
+lvalue = variable | list_member;
+list_member = variable "[" integer "]";
+
+call = function "(" { argument_list } ")";
+argument_list = [ rvalue { "," rvalue } ];
+
+array = "<" type ">" "{" array_list "}";
+array_list = rvalue { "," rvalue };
+
+integer = ([ "-" ] { number }) | ("0x" hexadecimal_digit) | ("'" char "'");
+string = '"' { char } '"';
+char = letter | number | char_escape;
+char_escape = "\" letter;
+
+type = type_name | builtin_type | complex_type;
+operator = "<<" | ">>" | "<=" | ">=" | "<" | ">" | "==" | "!=" | "+" | "-" | "*" | "/" | "&" | "|" | "^" | "||" | "&&" | "%";
+prefix_unary_operator = "!" | "~" | "*" | "&" | "++" | "--";
+postfix_unary_operator = "++" | "--";
+builtin_type = ( [ "signed" | "unsigned" ] ( "char" | "short" | "int" | "long" | "long" "long" ) [ "int" ] ) | "float" | ( [ "long" ] "double" ) | "void";
+term = ";";
+
+identifier = letter { letter | number | unreserved_special_char };
+function = identifier;
+variable = identifier;
+type_name = identifier;
+member = identifier;
