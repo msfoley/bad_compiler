@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     int ret;
     struct arguments *args;
     char *config_buf;
-    struct token *token_list;
+    struct token_list token_list;
 
     ret = parse_arguments(&args, argc, argv);
     if (ret) {
@@ -54,12 +54,14 @@ int main(int argc, char **argv) {
 
     ssize_t fret = read_file(args->source, &config_buf);
     if (fret >= 0) {
+        token_list.name = args->source;
+
         ret = parse_tokens(config_buf, &token_list);
         if (ret) {
             print_error("Tokenizing failed with %s (%d)\n", strerror(ret), ret);
         }
 
-        free_token_list(token_list);
+        free_token_list(&token_list);
     } else {
         print_error("Opening file failed with %s (%d)\n", strerror((int) -fret), (int) -fret);
     }

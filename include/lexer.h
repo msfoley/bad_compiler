@@ -78,16 +78,26 @@ struct token {
     enum token_id id;
     char *ident_data;
 
+    size_t offset;
+    size_t line;
+
     struct token *next;
+};
+
+struct token_list {
+    struct token *head;
+    struct token *tail;
+
+    const char *name;
 };
 
 extern const char special_chars[TOKEN_COUNT];
 extern const char *token_strings[TOKEN_COUNT];
 extern const char *token_names[TOKEN_COUNT];
 
-void print_token_list(struct token *head);
-void free_token_list(struct token *head);
-int parse_tokens(const char *string, struct token **tokens);
+void print_token_list(struct token_list *list);
+void free_token_list(struct token_list *list);
+int parse_tokens(const char *string, struct token_list *list);
 
 int token_is_whitespace(struct token *token);
 

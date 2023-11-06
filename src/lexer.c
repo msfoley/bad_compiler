@@ -147,24 +147,35 @@ const char *token_names[TOKEN_COUNT] = {
     [TOKEN_LIST_END] = "TOKEN_LIST_END",
 };
 
-void print_token_list(struct token *head) {
-    print_info("Token list: \n");
-    while (head != NULL) {
-        if (head->id != TOKEN_IDENT) {
-            print_debug("\t%s\n", token_names[head->id]);
-        } else {
-            print_debug("\t%s (\"%s\")\n", token_names[head->id], head->ident_data);
+void print_token_list(struct token_list *list) {
+    struct token *t;
+
+    if (list == NULL) {
+        return;
+    }
+
+    print_debug("Token list:\n");
+
+    t = list->head;
+    while (t != NULL) {
+        print_debug("\t%s [%s:%zu %zu]\n", token_names[t->id], list->name, t->line, t->offset);
+        if (t->ident_data) {
+            print_debug("\t\t= \"%s\"\n", t->ident_data);
         }
 
-        head = head->next;
+        t = t->next;
     }
 }
 
-void free_token_list(struct token *head) {
+void free_token_list(struct token_list *list) {
     struct token *curr, *next;
 
-    curr = head;
-    while (curr != NULL) {
+    if (!list->head) {
+        return;
+    }
+
+    curr = list->head;
+    while (curr) {
         next = curr->next;
 
         if (curr->ident_data) {
@@ -174,12 +185,14 @@ void free_token_list(struct token *head) {
 
         curr = next;
     }
+
+    list->head = NULL;
 }
 
-int add_token_to_list(struct token **head, struct token **tail, enum token_id id, char *ident_data) {
+int add_token_to_list(struct token_list *list, enum token_id id, char *ident_data, size_t line, size_t offset) {
     struct token *token;
 
-    if (!head || !tail) {
+    if (!list) {
         return EINVAL;
     }
 
@@ -190,16 +203,18 @@ int add_token_to_list(struct token **head, struct token **tail, enum token_id id
 
     token->id = id;
     token->ident_data = ident_data;
+    token->line = line;
+    token->offset = offset;
     token->next = NULL;
 
-    if (!*head) {
-        *head = token;
+    if (!list->head) {
+        list->head = token;
     }
 
-    if (*tail) {
-        (*tail)->next = token;
+    if (list->tail) {
+        list->tail->next = token;
     }
-    *tail = token;
+    list->tail = token;
 
     return 0;
 }
@@ -228,19 +243,25 @@ int compare_to_token_string(const char *string, const char *token_string) {
     return len;
 }
 
-int parse_tokens(const char *string, struct token **tokens) {
+int parse_tokens(const char *string, struct token_list *list) {
     struct token *head = NULL;
     struct token *tail = NULL;
     struct token *token = NULL;
     const char *s = NULL;
+    const char *line_start = string;
+    size_t line = 0;
+    size_t offset;
     int ret = 0;
     int len = 0;
 
-    if (!tokens || !string) {
+    if (!list || !string) {
         return EINVAL;
     }
 
-    add_token_to_list(&head, &tail, TOKEN_LIST_START, NULL);
+    list->head = NULL;
+    list->tail = NULL;
+
+    add_token_to_list(list, TOKEN_LIST_START, NULL, line, (size_t) (string - line_start));
 
     while (*string != '\0') {
         enum token_id id = TOKEN_IDENT;
@@ -260,7 +281,13 @@ int parse_tokens(const char *string, struct token **tokens) {
 
         // This is a token made of special characters
         if (id < TOKEN_IDENT) {
-            add_token_to_list(&head, &tail, id, NULL);
+            add_token_to_list(list, id, NULL, line, (size_t) (string - line_start));
+
+            if (id == TOKEN_NEW_LINE) {
+                line_start = string;
+                line++;
+            }
+
             continue;
         }
 
@@ -292,17 +319,15 @@ int parse_tokens(const char *string, struct token **tokens) {
         ident_data[len] = '\0';
         string += len;
 
-        add_token_to_list(&head, &tail, id, ident_data);
+        add_token_to_list(list, id, ident_data, line, (size_t) (string - line_start));
     }
 
-    add_token_to_list(&head, &tail, TOKEN_LIST_END, NULL);
+    add_token_to_list(list, TOKEN_LIST_END, NULL, line, (size_t) (string - line_start));
 
 error:
-    print_token_list(head);
+    print_token_list(list);
     if (ret != 0) {
-        free_token_list(head);
-    } else {
-        *tokens = head;
+        free_token_list(list);
     }
 
     return ret;
