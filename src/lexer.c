@@ -151,9 +151,9 @@ void print_token_list(struct token *head) {
     print_info("Token list: \n");
     while (head != NULL) {
         if (head->id != TOKEN_IDENT) {
-            print_info("\t%s\n", token_names[head->id]);
+            print_debug("\t%s\n", token_names[head->id]);
         } else {
-            print_info("\t%s (\"%s\")\n", token_names[head->id], head->ident_data);
+            print_debug("\t%s (\"%s\")\n", token_names[head->id], head->ident_data);
         }
 
         head = head->next;
