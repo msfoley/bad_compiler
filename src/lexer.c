@@ -7,44 +7,7 @@
 #include <log.h>
 #include <lexer.h>
 
-/*
- * statement = for_loop | if_statement | (expression term)
- *
- * for_loop = "for" "(" for_header ")" "{" for_body "}"
- * for_header = [ expressiion ] term [ expression ] term [ expression ]
- * for_body = { statement term }
- *
- * if_statment = "if" "(" expression ")" "{" if_body "}" { else_if } [ else ]
- * else_if = "else" "if" "(" expression ")" "{" if_body "}"
- * else = "else" "{" if_body "}"
- * if_body = { statement term }
- *
- * expression = [ lvalue "=" ] rvalue operator rvalue
- * rvalue = call | variable | integer | list_member | string | array | ( "(" expression ")" )
- * lvalue = variable | list_member
- *
- * list_member = variable "[" integer "]"
- * variable_declaration = type variable [ "[" integer "]" ]
- *
- * call = command "(" { argument_list } ")"
- * argument_list = [ rvalue { "," rvalue } ]
- *
- * array = "<" type ">" "{" array_list "}"
- * array_list = rvalue { "," rvalue }
- *
- * integer = ([ "-" ] { number }) | ("0x" hexadecimal_digit) | ("'" char "'")
- * string = '"' { char } '"'
- * char = letter | number | char_escape
- *
- * type = "uint8_t" | "uint16_t" | "uint32_t" | "uint64_t"
- * operator = "<<" | ">>" | "<=" | ">=" | "<" | ">" | "==" | "!=" | "+" | "-" | "*" | "/" | "&" | "|" | "^" | "||" | "&&"
- *
- * command = letter { letter | number }
- * variable = letter { letter | number }
- *
- */
-
-const char special_chars[TOKEN_COUNT] = "\t \n\r(){}[]<>=!|&+-*/^,;:\\\"'~";
+const char special_chars[TOKEN_COUNT] = "\t \n\r(){}[]<>=!|&+-*/^,;:\\\"'~%.";
 const char *token_strings[TOKEN_COUNT] = {
     [TOKEN_START_LINE_COMMENT] = "//",
     [TOKEN_START_BLOCK_COMMENT] = "/*",
@@ -67,6 +30,10 @@ const char *token_strings[TOKEN_COUNT] = {
     [TOKEN_NOT_EQ] = "!=",
     [TOKEN_OR] = "||",
     [TOKEN_AND] = "&&",
+    [TOKEN_INCREMENT] = "++",
+    [TOKEN_DECREMENT] = "--",
+    [TOKEN_POINTER_ACCESS] = "->",
+    [TOKEN_ACCESS] = ".",
     [TOKEN_LESS_THAN] = "<",
     [TOKEN_GREATER_THAN] = ">",
     [TOKEN_ADD] = "+",
@@ -85,6 +52,8 @@ const char *token_strings[TOKEN_COUNT] = {
     [TOKEN_BACKSLASH] = "\\",
     [TOKEN_DOUBLE_QUOTE] = "\"",
     [TOKEN_SINGLE_QUOTE] = "'",
+    [TOKEN_MODULO] = "%",
+    [TOKEN_PREPROCESSOR_START] = "#",
     [TOKEN_FOR] = "for",
     [TOKEN_IF] = "if",
     [TOKEN_ELSE] = "else",
@@ -103,6 +72,8 @@ const char *token_strings[TOKEN_COUNT] = {
     [TOKEN_SIZEOF] = "sizeof",
     [TOKEN_OFFSETOF] = "offsetof",
     [TOKEN_TYPEDEF] = "typedef",
+    [TOKEN_DEFAULT] = "default",
+    [TOKEN_GOTO] = "goto",
 };
 
 const char *token_names[TOKEN_COUNT] = {
@@ -127,6 +98,10 @@ const char *token_names[TOKEN_COUNT] = {
     [TOKEN_NOT_EQ] = "TOKEN_NOT_EQ",
     [TOKEN_OR] = "TOKEN_OR",
     [TOKEN_AND] = "TOKEN_AND",
+    [TOKEN_INCREMENT] = "TOKEN_INCREMENT",
+    [TOKEN_DECREMENT] = "TOKEN_DECREMENT",
+    [TOKEN_POINTER_ACCESS] = "TOKEN_POINTER_ACCESS",
+    [TOKEN_ACCESS] = "TOKEN_ACCESS",
     [TOKEN_LESS_THAN] = "TOKEN_LESS_THAN",
     [TOKEN_GREATER_THAN] = "TOKEN_GREATER_THAN",
     [TOKEN_ADD] = "TOKEN_ADD",
@@ -145,6 +120,8 @@ const char *token_names[TOKEN_COUNT] = {
     [TOKEN_BACKSLASH] = "TOKEN_BACKSLASH",
     [TOKEN_DOUBLE_QUOTE] = "TOKEN_DOUBLE_QUOTE",
     [TOKEN_SINGLE_QUOTE] = "TOKEN_SINGLE_QUOTE",
+    [TOKEN_MODULO] = "TOKEN_MODULO",
+    [TOKEN_PREPROCESSOR_START] = "TOKEN_PREPROCESSOR_START",
     [TOKEN_FOR] = "TOKEN_FOR",
     [TOKEN_IF] = "TOKEN_IF",
     [TOKEN_ELSE] = "TOKEN_ELSE",
@@ -163,6 +140,8 @@ const char *token_names[TOKEN_COUNT] = {
     [TOKEN_SIZEOF] = "TOKEN_SIZEOF",
     [TOKEN_OFFSETOF] = "TOKEN_OFFSETOF",
     [TOKEN_TYPEDEF] = "TOKEN_TYPEDEF",
+    [TOKEN_DEFAULT] = "TOKEN_DEFAULT",
+    [TOKEN_GOTO] = "TOKEN_GOTO",
     [TOKEN_IDENT] = "TOKEN_IDENT",
     [TOKEN_LIST_START] = "TOKEN_LIST_START",
     [TOKEN_LIST_END] = "TOKEN_LIST_END",
@@ -225,11 +204,37 @@ int add_token_to_list(struct token **head, struct token **tail, enum token_id id
     return 0;
 }
 
+// Return 0 if token_string does not match the beginning of string,
+// otherwise return the length of token_string
+int compare_to_token_string(const char *string, const char *token_string) {
+    int len = 0;
+
+    while (token_string[len] != '\0') {
+        if (string[len] == '\0') {
+            return 0;
+        }
+
+        if (string[len] != token_string[len]) {
+            break;
+        }
+
+        len++;
+    }
+
+    if (token_string[len] != '\0') {
+        return 0;
+    }
+
+    return len;
+}
+
 int parse_tokens(const char *string, struct token **tokens) {
     struct token *head = NULL;
     struct token *tail = NULL;
     struct token *token = NULL;
+    const char *s = NULL;
     int ret = 0;
+    int len = 0;
 
     if (!tokens || !string) {
         return EINVAL;
@@ -242,37 +247,26 @@ int parse_tokens(const char *string, struct token **tokens) {
         char *ident_data = NULL;
 
         // Find special case tokens
-        for (int i = 0; i < TOKEN_FOR; i++) {
-            const char *ts = token_strings[i];
-            const char *s = string;
-
-            while (*ts != '\0') {
-                if (*s != *ts) {
-                    break;
-                }
-
-                s++;
-                ts++;
-            }
-
-            if (*ts == '\0') {
+        for (int i = 0; i < TOKEN_IDENT; i++) {
+            len = compare_to_token_string(string, token_strings[i]);
+            if (len != 0) {
                 id = i;
                 // Advance string pointer to end of special token
-                string = s;
+                string += len;
 
                 break;
             }
         }
 
         // This is a token made of special characters
-        if (id < TOKEN_FOR) {
+        if (id < TOKEN_IDENT) {
             add_token_to_list(&head, &tail, id, NULL);
             continue;
         }
 
-        // Otherwise this is TOKEN_IDENT or a special token made of alphanumerics
-        size_t len = 0;
-        const char *s = string;
+        // Otherwise this is TOKEN_IDENT
+        s = string;
+        len = 0;
 
         while (strchr(special_chars, *(s++)) == NULL) {
             // Collect characters until we hit a special character
@@ -287,23 +281,15 @@ int parse_tokens(const char *string, struct token **tokens) {
             goto error;
         }
 
-        for (int i = TOKEN_FOR; i < TOKEN_IDENT; i++) {
-            if (strncmp(string, token_strings[i], len) == 0) {
-                id = i;
-            }
-        }
-
         // If this doesn't match any special case, it must be a TOKEN_IDENT
-        if (id == TOKEN_IDENT) {
-            ident_data = malloc(sizeof(*ident_data) * (len + 1));
-            if (!ident_data) {
-                ret = ENOMEM;
-                goto error;
-            }
-
-            strncpy(ident_data, string, len);
-            ident_data[len] = '\0';
+        ident_data = malloc(sizeof(*ident_data) * (len + 1));
+        if (!ident_data) {
+            ret = ENOMEM;
+            goto error;
         }
+
+        strncpy(ident_data, string, len);
+        ident_data[len] = '\0';
         string += len;
 
         add_token_to_list(&head, &tail, id, ident_data);

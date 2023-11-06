@@ -23,6 +23,10 @@ enum token_id {
     TOKEN_NOT_EQ,
     TOKEN_OR,
     TOKEN_AND,
+    TOKEN_INCREMENT,
+    TOKEN_DECREMENT,
+    TOKEN_POINTER_ACCESS,
+    TOKEN_ACCESS,
     TOKEN_LESS_THAN,
     TOKEN_GREATER_THAN,
     TOKEN_ADD,
@@ -41,6 +45,8 @@ enum token_id {
     TOKEN_BACKSLASH,
     TOKEN_DOUBLE_QUOTE,
     TOKEN_SINGLE_QUOTE,
+    TOKEN_MODULO,
+    TOKEN_PREPROCESSOR_START,
     TOKEN_FOR,
     TOKEN_IF,
     TOKEN_ELSE,
@@ -59,6 +65,8 @@ enum token_id {
     TOKEN_SIZEOF,
     TOKEN_OFFSETOF,
     TOKEN_TYPEDEF,
+    TOKEN_DEFAULT,
+    TOKEN_GOTO,
     TOKEN_IDENT,
     // These tokens signify the start and end of the list
     TOKEN_LIST_START,
@@ -80,5 +88,7 @@ extern const char *token_names[TOKEN_COUNT];
 void print_token_list(struct token *head);
 void free_token_list(struct token *head);
 int parse_tokens(const char *string, struct token **tokens);
+
+int token_is_whitespace(struct token *token);
 
 #endif
